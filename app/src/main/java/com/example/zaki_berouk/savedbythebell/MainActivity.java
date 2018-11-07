@@ -38,6 +38,7 @@ import android.view.MenuItem;
 import android.widget.Button;
 import android.widget.DatePicker;
 import android.widget.EditText;
+import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.TimePicker;
@@ -76,12 +77,11 @@ public class MainActivity extends AppCompatActivity
     private TimePickerDialog.OnTimeSetListener mTimeSetListener;
     private Location lastLocation;
     private LocationManager mLocationManager;
+    boolean isGPS = true;
     private LocationListener mLocationListener = new LocationListener() {
         @Override
         public void onLocationChanged(Location location) {
-            Log.d(TAG, "onLocationChanged: !!!!!!!!!!!!!" + location.getLongitude() + " " + location.getLatitude());
             lastLocation = location;
-            add_event.setEnabled(true);
         }
 
         @Override
@@ -167,15 +167,40 @@ public class MainActivity extends AppCompatActivity
         //Un peu sale mais on a un bouton qui va ouvrir un alert dialog qui va contenir le
         //formulaire d'ajout d'event
         add_event = (Button) findViewById(R.id.add_event_btn);
-        if (lastLocation == null) {
-            add_event.setEnabled(false);
-        }
         add_event.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 LayoutInflater inflater = getLayoutInflater();
                 final View alertLayout = inflater.inflate(R.layout.event_add_form, null);
                 final TextView date = (TextView) alertLayout.findViewById(R.id.dateEvent);
                 final TextView time = (TextView) alertLayout.findViewById(R.id.timeEvent);
+                final Button gpsButton = (Button) alertLayout.findViewById(R.id.gpsButton);
+                final Button customLocationButton = (Button) alertLayout.findViewById(R.id.customLocationButton);
+                final LinearLayout customLocation = alertLayout.findViewById(R.id.customLocation);
+                gpsButton.setEnabled(!isGPS);
+                gpsButton.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        if (isGPS) {
+                            return;
+                        }
+                        isGPS = true;
+                        customLocation.setVisibility(View.GONE);
+                        gpsButton.setEnabled(false);
+                        customLocationButton.setEnabled(true);
+                    }
+                });
+                customLocationButton.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        if (!isGPS) {
+                            return;
+                        }
+                        isGPS = false;
+                        customLocation.setVisibility(View.VISIBLE);
+                        customLocationButton.setEnabled(false);
+                        gpsButton.setEnabled(true);
+                    }
+                });
 
                 AlertDialog.Builder alert = new AlertDialog.Builder(MainActivity.this);
 
@@ -250,10 +275,20 @@ public class MainActivity extends AppCompatActivity
                                 }
                                 final EditText location = (EditText) alertLayout.findViewById(R.id.locationEvent);
                                 final EditText description = (EditText) alertLayout.findViewById(R.id.descrEvent);
+                                final EditText departure = (EditText) alertLayout.findViewById(R.id.departureLocation);
 
                                 if (date.getText().length() == 0 || time.getText().length() == 0 || location.getText().length() == 0) {
                                     Toast.makeText(MainActivity.this, "Veuillez remplir tout les champs.", Toast.LENGTH_SHORT).show();
                                     return;
+                                }
+                                String loc;
+                                if (isGPS && lastLocation == null) {
+                                    Toast.makeText(MainActivity.this, "Veuillez attendre la localisation", Toast.LENGTH_SHORT).show();
+                                    return;
+                                } else if (isGPS) {
+                                    loc = lastLocation.getLatitude() + "," + lastLocation.getLongitude();
+                                } else {
+                                    loc = departure.getText().toString();
                                 }
 
                                 cal.set(Integer.parseInt(dateDetails[2]),
@@ -272,7 +307,6 @@ public class MainActivity extends AppCompatActivity
                                 //String name, String date, String location, String descr, int id
 
                                 Event new_Event = new Event(nameEvent, dateEvent, locationEvent, descrEvent);
-                                String loc = lastLocation.getLatitude() + "," + lastLocation.getLongitude();
                                 try {
                                     Long duration = new DurationFetcher().execute(API_KEY, loc, locationEvent, dateEvent.getTime() + "").get();
                                     Log.d(TAG, "onClick: " + duration + " secondes");

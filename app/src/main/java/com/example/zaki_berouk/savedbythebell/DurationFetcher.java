@@ -27,8 +27,8 @@ public class DurationFetcher extends AsyncTask<String, Void, Long> {
     @Override
     protected Long doInBackground(String... params) {
         String urlString = "https://maps.googleapis.com/maps/api/directions/json?key=" + params[0];
-        urlString += "&origin=" + params[1];
-        urlString += "&destination=" + params[2].replace(" ", "+");
+        urlString += "&origin=" + params[1].trim().replace(" ", "+");
+        urlString += "&destination=" + params[2].trim().replace(" ", "+");
         urlString += "&departure_time=" + params[3];
 
         Log.d("DurationFetcher", "doInBackground: " + urlString);
