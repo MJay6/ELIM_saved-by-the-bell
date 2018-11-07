@@ -12,7 +12,10 @@ import android.widget.TextView;
 import com.example.zaki_berouk.savedbythebell.R;
 import com.example.zaki_berouk.savedbythebell.model.Event;
 
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.List;
+import java.util.Locale;
 
 public class EventAdapter extends ArrayAdapter<Event> {
 
@@ -43,8 +46,10 @@ public class EventAdapter extends ArrayAdapter<Event> {
         departure_time = (TextView)  convertView.findViewById(R.id.departure_timeEvent);
 
         Event event = mEvents.get(position);
+        SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy hh:mm", Locale.FRANCE);
+
         name.setText(event.getName());
-        date.setText(event.getDate().toString());
+        date.setText(dateFormat.format(event.getDate()));
         location.setText(event.getLocation());
         if(event.getDescr() == null || event.getDescr() == ""){
             descr.setText("Il n'y a pas de description...");
@@ -55,7 +60,7 @@ public class EventAdapter extends ArrayAdapter<Event> {
         if(event.getDepartureTime() == null || event.getDepartureTime().toString() == ""){
             departure_time.setText("A calculer...");
         } else {
-            departure_time.setText(event.getDepartureTime().toString());
+            departure_time.setText(dateFormat.format(event.getDepartureTime()));
         }
 
 

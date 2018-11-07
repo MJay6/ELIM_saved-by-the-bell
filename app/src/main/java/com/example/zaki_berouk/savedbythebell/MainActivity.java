@@ -41,6 +41,7 @@ import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.TimePicker;
+import android.widget.Toast;
 
 import com.example.zaki_berouk.savedbythebell.adapter.EventAdapter;
 import com.example.zaki_berouk.savedbythebell.db_utils.DBHelper;
@@ -220,7 +221,8 @@ public class MainActivity extends AppCompatActivity
                     }
                 };
 
-                alert.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                alert.setPositiveButton("Ajouter", null);
+                alert.setNegativeButton("Annuler", new DialogInterface.OnClickListener() {
 
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
@@ -228,62 +230,78 @@ public class MainActivity extends AppCompatActivity
                     }
                 });
 
-                alert.setPositiveButton("Ajouter", new DialogInterface.OnClickListener() {
+                AlertDialog dialog = alert.create();
+                dialog.setOnShowListener(new DialogInterface.OnShowListener() {
                     @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        Calendar cal = Calendar.getInstance();
+                    public void onShow(DialogInterface dialogInterface) {
+                        Button button = ((AlertDialog) dialog).getButton(AlertDialog.BUTTON_POSITIVE);
+                        button.setOnClickListener(new View.OnClickListener() {
+                            @Override
+                            public void onClick(View view) {
+                                Calendar cal = Calendar.getInstance();
 
-                        final TextView date = (TextView) alertLayout.findViewById(R.id.dateEvent);
-                        String[] dateDetails = date.getText().toString().split("/");
-                        final TextView time = (TextView) alertLayout.findViewById(R.id.timeEvent);
-                        String[] timeDetails = time.getText().toString().split(":");
-                        final EditText name = (EditText) alertLayout.findViewById(R.id.nameEvent);
-                        final EditText location = (EditText) alertLayout.findViewById(R.id.locationEvent);
-                        final EditText description = (EditText) alertLayout.findViewById(R.id.descrEvent);
-                        cal.set(Integer.parseInt(dateDetails[2]),
-                                Integer.parseInt(dateDetails[1]) - 1,
-                                Integer.parseInt(dateDetails[0]),
-                                Integer.parseInt(timeDetails[0]),
-                                Integer.parseInt(timeDetails[1]));
-                        Date dateEvent = cal.getTime();
-                        String nameEvent = name.getText().toString();
-                        String locationEvent = location.getText().toString();
-                        String descrEvent = description.getText().toString();
-                        Log.d(TAG, "onClick: " + dateEvent.toString());
+                                final TextView date = (TextView) alertLayout.findViewById(R.id.dateEvent);
+                                String[] dateDetails = date.getText().toString().split("/");
+                                final TextView time = (TextView) alertLayout.findViewById(R.id.timeEvent);
+                                String[] timeDetails = time.getText().toString().split(":");
+                                final EditText name = (EditText) alertLayout.findViewById(R.id.nameEvent);
+                                if (name.getText().length() == 0) {
+                                    name.setText("Event sans nom");
+                                }
+                                final EditText location = (EditText) alertLayout.findViewById(R.id.locationEvent);
+                                final EditText description = (EditText) alertLayout.findViewById(R.id.descrEvent);
 
-                        //DB : table event(id, name, date, location, descr, departure_time)
-                        //Event (model) :  name, date, descr, location, departure_time
-                        //String name, String date, String location, String descr, int id
+                                if (date.getText().length() == 0 || time.getText().length() == 0 || location.getText().length() == 0) {
+                                    Toast.makeText(MainActivity.this, "Veuillez remplir tout les champs.", Toast.LENGTH_SHORT).show();
+                                    return;
+                                }
 
-                        Event new_Event = new Event(nameEvent, dateEvent, locationEvent, descrEvent);
-                        String loc = lastLocation.getLatitude() + "," + lastLocation.getLongitude();
-                        try {
-                            Long duration = new DurationFetcher().execute(API_KEY, loc, locationEvent, dateEvent.getTime() + "").get();
-                            Log.d(TAG, "onClick: " + duration + " secondes");
-                            cal.setTimeInMillis(cal.getTimeInMillis() - duration * 1000);
-                            Date departureDate = cal.getTime();
-                            Log.d(TAG, "onClick: " + cal.getTime().toString());
-                            new_Event.setDepartureTime(departureDate);
-                        } catch (ExecutionException | InterruptedException e) {
-                            e.printStackTrace();
-                        }
+                                cal.set(Integer.parseInt(dateDetails[2]),
+                                        Integer.parseInt(dateDetails[1]) - 1,
+                                        Integer.parseInt(dateDetails[0]),
+                                        Integer.parseInt(timeDetails[0]),
+                                        Integer.parseInt(timeDetails[1]));
+                                Date dateEvent = cal.getTime();
+                                String nameEvent = name.getText().toString();
+                                String locationEvent = location.getText().toString();
+                                String descrEvent = description.getText().toString();
+                                Log.d(TAG, "onClick: " + dateEvent.toString());
+
+                                //DB : table event(id, name, date, location, descr, departure_time)
+                                //Event (model) :  name, date, descr, location, departure_time
+                                //String name, String date, String location, String descr, int id
+
+                                Event new_Event = new Event(nameEvent, dateEvent, locationEvent, descrEvent);
+                                String loc = lastLocation.getLatitude() + "," + lastLocation.getLongitude();
+                                try {
+                                    Long duration = new DurationFetcher().execute(API_KEY, loc, locationEvent, dateEvent.getTime() + "").get();
+                                    Log.d(TAG, "onClick: " + duration + " secondes");
+                                    cal.setTimeInMillis(cal.getTimeInMillis() - duration * 1000);
+                                    Date departureDate = cal.getTime();
+                                    Log.d(TAG, "onClick: " + cal.getTime().toString());
+                                    new_Event.setDepartureTime(departureDate);
+                                } catch (ExecutionException | InterruptedException e) {
+                                    e.printStackTrace();
+                                }
 
 
-                        try {
-                            dbHelper.openDataBase();
-                            dbHelper.addEventinDB(nameEvent, dateEvent, locationEvent, descrEvent, events.size() + 1, new_Event.getDepartureTime());
-                            dbHelper.close();
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                        events.add(new_Event);
-                        EventAdapter adapter = new EventAdapter(getApplicationContext(), R.layout.event_card, events);
-                        ListView list_event = (ListView) findViewById(R.id.event_lv);
-                        list_event.setAdapter(adapter);
+                                try {
+                                    dbHelper.openDataBase();
+                                    dbHelper.addEventinDB(nameEvent, dateEvent, locationEvent, descrEvent, events.size() + 1, new_Event.getDepartureTime());
+                                    dbHelper.close();
+                                } catch (IOException e) {
+                                    e.printStackTrace();
+                                }
+                                events.add(new_Event);
+                                EventAdapter adapter = new EventAdapter(getApplicationContext(), R.layout.event_card, events);
+                                ListView list_event = (ListView) findViewById(R.id.event_lv);
+                                list_event.setAdapter(adapter);
 
+                                dialog.dismiss();
+                            }
+                        });
                     }
                 });
-                AlertDialog dialog = alert.create();
                 dialog.show();
             }
         });
