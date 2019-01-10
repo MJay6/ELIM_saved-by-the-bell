@@ -1,10 +1,16 @@
 package com.example.zaki_berouk.savedbythebell;
 
+import android.Manifest;
 import android.content.Context;
+import android.content.pm.PackageManager;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.os.Build;
+import android.os.Environment;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -14,8 +20,11 @@ import android.widget.Toast;
 
 import com.example.zaki_berouk.savedbythebell.db_utils.DBHelper;
 
+import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 
 public class SensorActivity extends AppCompatActivity implements  SensorEventListener{
@@ -23,15 +32,17 @@ public class SensorActivity extends AppCompatActivity implements  SensorEventLis
     private SensorManager sensorManager;
     private Sensor accelerometer;
     private boolean isRecording = false;
-    private final DBHelper dbHelper = DBHelper.getInstance(this);
     private Button startStopRecord;
-    private String dbFile = "sensor_data";
+    private String DB_FILE = "sensor_data";
     private String listSensorData="";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_sensor);
+
+
 
         sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
@@ -41,16 +52,20 @@ public class SensorActivity extends AppCompatActivity implements  SensorEventLis
         startStopRecord.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+
                 if(isRecording){
                     isRecording = false;
                     startStopRecord.setText("Start Record");
-                    save(listSensorData);
+                    writeFile();
                     listSensorData="";
-                    //Toast.makeText(getBaseContext(), read(),Toast.LENGTH_LONG).show();
+
                 }else{
                     isRecording = true;
                     startStopRecord.setText("Stop Record");
                 }
+
+
+                Log.i("sucess","created");
             }
         });
 
@@ -89,24 +104,44 @@ public class SensorActivity extends AppCompatActivity implements  SensorEventLis
 
     }
 
-    public void save(String texte) {
+    public void writeFile(){
+        if (ContextCompat.checkSelfPermission(this,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                != PackageManager.PERMISSION_GRANTED) {
 
-        String texte_a_garder = read()+"\n"+texte;
-        try {
-            FileOutputStream fOut = openFileOutput(dbFile, MODE_PRIVATE );
-            fOut.write(texte_a_garder.getBytes());
-            fOut.close();
-            Toast.makeText(getBaseContext(), "Stockage fichier",
-                    Toast.LENGTH_SHORT).show();
-        } catch (Exception e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            if (ActivityCompat.shouldShowRequestPermissionRationale(this,
+                    Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
+
+            } else {
+
+
+                ActivityCompat.requestPermissions(this,
+                        new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},23
+                );
+            }
+        }
+
+        if(isExternalStorageWritable()){
+            String text_to_keep = readFile() + listSensorData;
+            File textfile = new File(Environment.getExternalStorageDirectory(),DB_FILE);
+
+
+            FileOutputStream fo = null;
+            try {
+                fo = new FileOutputStream(textfile);
+                fo.write(text_to_keep.getBytes());
+                fo.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 
-    public String read(){
+    public String readFile(){
         try{
-            FileInputStream fin = openFileInput(dbFile);
+            File textfile = new File(Environment.getExternalStorageDirectory(),DB_FILE);
+            FileInputStream fin= new FileInputStream(textfile);
+            Log.i("path2",Environment.getExternalStorageDirectory().getAbsolutePath() + DB_FILE);
             int c;
             String temp="";
             while( (c = fin.read()) != -1){
@@ -121,4 +156,13 @@ public class SensorActivity extends AppCompatActivity implements  SensorEventLis
         }
 
     }
+
+    public boolean isExternalStorageWritable() {
+        String state = Environment.getExternalStorageState();
+        if (Environment.MEDIA_MOUNTED.equals(state)) {
+            return true;
+        }
+        return false;
+    }
+
 }
