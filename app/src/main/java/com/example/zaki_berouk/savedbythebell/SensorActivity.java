@@ -31,6 +31,7 @@ public class SensorActivity extends AppCompatActivity implements  SensorEventLis
 
     private SensorManager sensorManager;
     private Sensor accelerometer;
+    private Sensor gyroscope;
     private boolean isRecording = false;
     private Button startStopRecord;
     private String DB_FILE = "sensor_data";
@@ -46,7 +47,10 @@ public class SensorActivity extends AppCompatActivity implements  SensorEventLis
 
         sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+        gyroscope = sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
+
         sensorManager.registerListener( this, accelerometer , SensorManager.SENSOR_DELAY_NORMAL);
+        sensorManager.registerListener( this, gyroscope, SensorManager.SENSOR_DELAY_NORMAL);
 
         startStopRecord = (Button) findViewById(R.id.startStopRecord);
         startStopRecord.setOnClickListener(new View.OnClickListener() {
@@ -79,20 +83,31 @@ public class SensorActivity extends AppCompatActivity implements  SensorEventLis
     protected void onResume() {
         super.onResume();
         sensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_NORMAL);
+        sensorManager.registerListener(this, gyroscope, SensorManager.SENSOR_DELAY_NORMAL);
     }
 
     @Override
     public void onSensorChanged(SensorEvent sensorEvent) {
         Sensor sensor = sensorEvent.sensor;
-        if (sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
-            if(isRecording){
-                float x = sensorEvent.values[0];
-                float y = sensorEvent.values[1];
-                float z = sensorEvent.values[2];
+        if(isRecording){
+            if (sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
 
-                Log.i("accel x ", String.valueOf(x));
+                float accel_x = sensorEvent.values[0];
+                float accel_y = sensorEvent.values[1];
+                float accel_z = sensorEvent.values[2];
 
-                listSensorData += "label, "+x +", "+y+", "+z+"\n";
+                //Log.i("accel x ", String.valueOf(accel_x));
+                listSensorData += "label, "+accel_x +", "+accel_y+", "+accel_z+", ";
+            }
+            if(sensor.getType() == Sensor.TYPE_GYROSCOPE){
+
+                float gyro_x = sensorEvent.values[0];
+                float gyro_y = sensorEvent.values[1];
+                float gyro_z = sensorEvent.values[2];
+
+                //Log.i("gyro x ", String.valueOf(gyro_x));
+                listSensorData += gyro_x +", "+gyro_y+", "+gyro_z+"\n";
+
             }
 
 
