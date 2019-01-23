@@ -135,12 +135,10 @@ public class DBHelper extends SQLiteOpenHelper {
     public void addEventinDB(String name, Date date, String location, String descr, int id, Date departure_time) {
         myDataBase.execSQL("INSERT INTO event VALUES(" + id + ", \"" + name + "\", \"" + date.getTime() + "\", \"" + location + "\", \"" + descr + "\", \"" + departure_time.getTime()
                 + "\");");
-        System.out.println("coucou");
     }
 
     public void addDataSensorinDB(int id, float accel_x,float accel_y,float accel_z) {
         myDataBase.execSQL("INSERT INTO mobile_sensor VALUES(" + id + ", " + accel_x + ", " + accel_y + ", " + accel_z
                 + ");");
-        System.out.println("coucou");
     }
 }

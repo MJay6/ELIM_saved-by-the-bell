@@ -16,6 +16,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.RadioGroup;
 import android.widget.Toast;
 
 import com.example.zaki_berouk.savedbythebell.db_utils.DBHelper;
@@ -36,6 +37,9 @@ public class SensorActivity extends AppCompatActivity implements  SensorEventLis
     private Button startStopRecord;
     private String DB_FILE = "sensor_data";
     private String listSensorData="";
+    private String lastKnownSample = "";
+    private RadioGroup labelGroup;
+    private String label = "unknown";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -43,7 +47,34 @@ public class SensorActivity extends AppCompatActivity implements  SensorEventLis
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_sensor);
 
-
+        labelGroup  = findViewById(R.id.labelRadioGroup);
+        labelGroup.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(RadioGroup radioGroup, int i) {
+                switch (i) {
+                    case R.id.radioButtonUnknownLabel:
+                        label = "unknown";
+                        Toast.makeText(getBaseContext(), "Set label to unknown",
+                                Toast.LENGTH_SHORT).show();
+                        break;
+                    case R.id.radioButtonDrivingLabel:
+                        label = "driving";
+                        Toast.makeText(getBaseContext(), "Set label to driving",
+                                Toast.LENGTH_SHORT).show();
+                        break;
+                    case R.id.radioButtonBicyclingLabel:
+                        label = "bicycling";
+                        Toast.makeText(getBaseContext(), "Set label to bicycling",
+                                Toast.LENGTH_SHORT).show();
+                        break;
+                    case R.id.radioButtonWalkingLabel:
+                        label = "walking";
+                        Toast.makeText(getBaseContext(), "Set label to walking",
+                                Toast.LENGTH_SHORT).show();
+                        break;
+                }
+            }
+        });
 
         sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
@@ -59,12 +90,19 @@ public class SensorActivity extends AppCompatActivity implements  SensorEventLis
 
                 if(isRecording){
                     isRecording = false;
+                    for (int i = 0; i < labelGroup.getChildCount(); i++) {
+                        labelGroup.getChildAt(i).setEnabled(true);
+                    }
                     startStopRecord.setText("Start Record");
                     writeFile();
                     listSensorData="";
-
+                    Log.i("File", readFile());
                 }else{
                     isRecording = true;
+                    for (int i = 0; i < labelGroup.getChildCount(); i++) {
+                        labelGroup.getChildAt(i).setEnabled(false);
+                    }
+                    clean();
                     startStopRecord.setText("Stop Record");
                 }
 
@@ -96,8 +134,9 @@ public class SensorActivity extends AppCompatActivity implements  SensorEventLis
                 float accel_y = sensorEvent.values[1];
                 float accel_z = sensorEvent.values[2];
 
-                //Log.i("accel x ", String.valueOf(accel_x));
-                listSensorData += "label, "+accel_x +", "+accel_y+", "+accel_z+", ";
+                listSensorData += label + ", "+ accel_x +", "+ accel_y +", "+ accel_z +"\n";
+
+                lastKnownSample = label + ", "+ accel_x +", "+ accel_y +", "+ accel_z +"\n";
             }
             if(sensor.getType() == Sensor.TYPE_GYROSCOPE){
 
@@ -149,6 +188,19 @@ public class SensorActivity extends AppCompatActivity implements  SensorEventLis
             } catch (IOException e) {
                 e.printStackTrace();
             }
+        }
+    }
+
+    public void clean() {
+        try {
+            FileOutputStream fOut = openFileOutput(DB_FILE, MODE_PRIVATE );
+            fOut.write("".getBytes());
+            fOut.close();
+            Toast.makeText(getBaseContext(), "Fichier clean",
+                    Toast.LENGTH_SHORT).show();
+        } catch (Exception e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
         }
     }
 
