@@ -134,9 +134,9 @@ public class SensorActivity extends AppCompatActivity implements  SensorEventLis
                 float accel_y = sensorEvent.values[1];
                 float accel_z = sensorEvent.values[2];
 
-                listSensorData += label + ", "+ accel_x +", "+ accel_y +", "+ accel_z +"\n";
+                listSensorData += label + ", "+ accel_x +", "+ accel_y +", "+ accel_z + ", ";
 
-                lastKnownSample = label + ", "+ accel_x +", "+ accel_y +", "+ accel_z +"\n";
+                lastKnownSample = label + ", "+ accel_x +", "+ accel_y +", "+ accel_z + ", ";
             }
             if(sensor.getType() == Sensor.TYPE_GYROSCOPE){
 
@@ -145,9 +145,10 @@ public class SensorActivity extends AppCompatActivity implements  SensorEventLis
                 float gyro_z = sensorEvent.values[2];
 
                 //Log.i("gyro x ", String.valueOf(gyro_x));
-                listSensorData += gyro_x +", "+gyro_y+", "+gyro_z+"\n";
+                listSensorData += gyro_x +", "+gyro_y+", "+gyro_z + "\n";
 
             }
+
 
 
         }
@@ -193,7 +194,8 @@ public class SensorActivity extends AppCompatActivity implements  SensorEventLis
 
     public void clean() {
         try {
-            FileOutputStream fOut = openFileOutput(DB_FILE, MODE_PRIVATE );
+            File textfile = new File(Environment.getExternalStorageDirectory(),DB_FILE);
+            FileOutputStream fOut = new FileOutputStream(textfile);
             fOut.write("".getBytes());
             fOut.close();
             Toast.makeText(getBaseContext(), "Fichier clean",
