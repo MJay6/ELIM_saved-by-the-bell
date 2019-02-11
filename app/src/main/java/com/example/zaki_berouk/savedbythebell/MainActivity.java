@@ -3,6 +3,9 @@ package com.example.zaki_berouk.savedbythebell;
 import android.Manifest;
 import android.app.AlertDialog;
 import android.app.DatePickerDialog;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.TimePickerDialog;
 import android.content.ContentResolver;
 import android.content.DialogInterface;
@@ -12,6 +15,7 @@ import android.content.res.AssetManager;
 import android.database.Cursor;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
+import android.icu.text.SimpleDateFormat;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
@@ -19,11 +23,14 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
 import android.provider.CalendarContract;
 import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.app.NotificationCompat;
+import android.support.v4.app.NotificationManagerCompat;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -48,6 +55,7 @@ import android.widget.Toast;
 import com.example.zaki_berouk.savedbythebell.adapter.EventAdapter;
 import com.example.zaki_berouk.savedbythebell.db_utils.DBHelper;
 import com.example.zaki_berouk.savedbythebell.model.Event;
+import com.example.zaki_berouk.savedbythebell.model.NotificationDetailsActivity;
 
 import org.json.JSONObject;
 
@@ -107,7 +115,7 @@ public class MainActivity extends AppCompatActivity
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-
+        createNotificationChannel();
         Properties properties = new Properties();
         AssetManager assetManager = this.getAssets();
         try {
@@ -341,7 +349,26 @@ public class MainActivity extends AppCompatActivity
                 dialog.show();
             }
         });
+        Handler handler = new Handler();
+        int delay = 1000; //milliseconds
 
+        handler.postDelayed(new Runnable(){
+            public void run(){
+                checkDepartureTime();
+                handler.postDelayed(this, delay);
+            }
+        }, delay);
+
+    }
+
+    private void checkDepartureTime() {
+        for (Event e: events) {
+            Date strDate = e.getDate();
+            if (new Date().after(strDate)&& (!e.hasBeenNotified())){
+                e.setHasBeenNotified(true);
+                triggerNotification(e);
+            }
+        }
     }
 
     @Override
@@ -416,6 +443,35 @@ public class MainActivity extends AppCompatActivity
             String[] perms = {Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION};
 
             requestPermissions(perms, 1337);
+        }
+    }
+
+    private void triggerNotification(Event e) {
+
+        Intent intent = new Intent(this, NotificationDetailsActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        PendingIntent pendingIntent = PendingIntent.getActivity(this,0, intent, 0);
+
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, "News")
+                .setSmallIcon(R.drawable.ic_alarm_black_24dp)
+                .setContentTitle(e.getName())
+                .setContentText(e.getLocation() +" "+ e .getDate())
+                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                .setContentIntent(pendingIntent)
+                .setChannelId("news")
+                .setAutoCancel(true);
+
+        NotificationManagerCompat notificationManagerCompat = NotificationManagerCompat.from(this);
+        notificationManagerCompat.notify(1, builder.build());
+    }
+
+    private void createNotificationChannel() {
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O){
+            NotificationChannel notificationChannel = new NotificationChannel("news","News", NotificationManager.IMPORTANCE_DEFAULT );
+            notificationChannel.setDescription("get information");
+            notificationChannel.setShowBadge(true);
+            NotificationManager notificationManager = getSystemService(NotificationManager.class);
+            notificationManager.createNotificationChannel(notificationChannel);
         }
     }
 }

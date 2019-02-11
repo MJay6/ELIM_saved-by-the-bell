@@ -1,7 +1,11 @@
 package com.example.zaki_berouk.savedbythebell;
 
 import android.Manifest;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
@@ -10,6 +14,8 @@ import android.hardware.SensorManager;
 import android.os.Build;
 import android.os.Environment;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.app.NotificationCompat;
+import android.support.v4.app.NotificationManagerCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -19,14 +25,12 @@ import android.widget.Button;
 import android.widget.RadioGroup;
 import android.widget.Toast;
 
-import com.example.zaki_berouk.savedbythebell.db_utils.DBHelper;
+import com.example.zaki_berouk.savedbythebell.model.NotificationDetailsActivity;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.ArrayList;
 
 public class SensorActivity extends AppCompatActivity implements  SensorEventListener{
 
@@ -41,11 +45,15 @@ public class SensorActivity extends AppCompatActivity implements  SensorEventLis
     private RadioGroup labelGroup;
     private String label = "unknown";
 
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_sensor);
+
+
 
         labelGroup  = findViewById(R.id.labelRadioGroup);
         labelGroup.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
@@ -88,6 +96,7 @@ public class SensorActivity extends AppCompatActivity implements  SensorEventLis
             @Override
             public void onClick(View view) {
 
+
                 if(isRecording){
                     isRecording = false;
                     for (int i = 0; i < labelGroup.getChildCount(); i++) {
@@ -112,6 +121,8 @@ public class SensorActivity extends AppCompatActivity implements  SensorEventLis
         });
 
     }
+
+
 
     protected void onPause() {
         super.onPause();

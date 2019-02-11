@@ -9,6 +9,7 @@ public class Event {
     private String location;
     private String descr;
     private Date departureTime;
+    private boolean hasBeenNotified=false;
 
     public Event(String name, Date date, String location, String descr) {
         this.name = name;
@@ -64,4 +65,9 @@ public class Event {
     public void setDepartureTime(Date departureTime) {
         this.departureTime = departureTime;
     }
+
+    public boolean hasBeenNotified() {return hasBeenNotified;}
+
+    public void setHasBeenNotified(boolean hasBeenNotified) {this.hasBeenNotified = hasBeenNotified; }
+
 }
