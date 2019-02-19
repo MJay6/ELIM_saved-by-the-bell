@@ -63,12 +63,16 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ExecutionException;
 
@@ -78,7 +82,7 @@ public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
 
     private static final String TAG = "MainActivity";
-    private String API_KEY;
+    private String API_KEY = "AIzaSyDLnS9HcL2Ks0fJL_7pemjjBsgudmgUrAg";
     private List<Event> events = new ArrayList<>();
     private Button add_event;
     private Button get_sensor_data;
@@ -88,6 +92,8 @@ public class MainActivity extends AppCompatActivity
     private Location lastLocation;
     private LocationManager mLocationManager;
     boolean isGPS = true;
+    private String SERVER_ADDRESS = "http://192.168.0.11:1880/elim";
+
     private LocationListener mLocationListener = new LocationListener() {
         @Override
         public void onLocationChanged(Location location) {
@@ -157,12 +163,24 @@ public class MainActivity extends AppCompatActivity
 
         //On crée une instance de DBHelper on l'ouvre et on appelle la méthode qui contient la requête SQL
         final DBHelper dbHelper = DBHelper.getInstance(this);
-
+/*
         try {
             dbHelper.createDataBase();
             dbHelper.openDataBase();
             events = dbHelper.getAllEvent();
         } catch (IOException e) {
+            e.printStackTrace();
+        }
+*/
+        try {
+            //ArrayList<Event> lists = new GetEvents().execute().get();
+            events = new GetEvents().execute().get();
+            for (Event e: events) {
+                Log.i("date", String.valueOf(e.getDate()));
+            }
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        } catch (InterruptedException e) {
             e.printStackTrace();
         }
 
@@ -328,7 +346,7 @@ public class MainActivity extends AppCompatActivity
                                     e.printStackTrace();
                                 }
 
-
+                                /*
                                 try {
                                     dbHelper.openDataBase();
                                     dbHelper.addEventinDB(nameEvent, dateEvent, locationEvent, descrEvent, events.size() + 1, new_Event.getDepartureTime());
@@ -336,6 +354,18 @@ public class MainActivity extends AppCompatActivity
                                 } catch (IOException e) {
                                     e.printStackTrace();
                                 }
+*/
+
+                                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
+                                Map<String, String> postData = new HashMap<>();
+                                postData.put("name", new_Event.getName());
+                                postData.put("date", sdf.format(new_Event.getDate()));
+                                postData.put("location", new_Event.getLocation());
+                                postData.put("description", new_Event.getDescr());
+                                postData.put("departureTime", sdf.format(new_Event.getDepartureTime()));
+                                SendEvent task = new SendEvent(postData);
+                                task.execute();
+
                                 events.add(new_Event);
                                 EventAdapter adapter = new EventAdapter(getApplicationContext(), R.layout.event_card, events);
                                 ListView list_event = (ListView) findViewById(R.id.event_lv);
@@ -444,6 +474,7 @@ public class MainActivity extends AppCompatActivity
 
             requestPermissions(perms, 1337);
         }
+
     }
 
     private void triggerNotification(Event e) {
@@ -474,4 +505,7 @@ public class MainActivity extends AppCompatActivity
             notificationManager.createNotificationChannel(notificationChannel);
         }
     }
+
+
+
 }

@@ -2,9 +2,13 @@ package com.example.zaki_berouk.savedbythebell;
 
 
 import android.content.res.AssetManager;
+import android.icu.text.SimpleDateFormat;
 import android.os.AsyncTask;
 import android.util.Log;
 
+import com.example.zaki_berouk.savedbythebell.model.Event;
+
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
@@ -13,9 +17,12 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.net.URLConnection;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
 import java.util.Properties;
 
-public class DurationFetcher extends AsyncTask<String, Void, Long> {
+public class GetEvents extends AsyncTask<String, Void, ArrayList<Event>> {
 
 
     @Override
@@ -25,14 +32,11 @@ public class DurationFetcher extends AsyncTask<String, Void, Long> {
     }
 
     @Override
-    protected Long doInBackground(String... params) {
-        String urlString = "https://maps.googleapis.com/maps/api/directions/json?key=" + params[0];
-        urlString += "&origin=" + params[1].trim().replace(" ", "+");
-        urlString += "&destination=" + params[2].trim().replace(" ", "+");
-        urlString += "&departure_time=" + params[3];
+    protected ArrayList<Event> doInBackground(String... params) {
+        String urlString = "http://192.168.43.65:1880/elim";
 
-        Log.d("DurationFetcher", "doInBackground: " + urlString);
-        Log.i("url :",urlString);
+        Log.d("GetEvents", "doInBackground: " + urlString);
+
         URLConnection urlConn = null;
         BufferedReader bufferedReader = null;
         try {
@@ -48,15 +52,25 @@ public class DurationFetcher extends AsyncTask<String, Void, Long> {
             }
 
             try{
-                JSONObject jsonObject = new JSONObject(stringBuffer.toString()).getJSONArray("routes").getJSONObject(0).getJSONArray("legs").getJSONObject(0);
-                Long result = jsonObject.getJSONObject("duration_in_traffic").getLong("value");
+                JSONArray jsonArray = new JSONArray(stringBuffer.toString());
+                ArrayList<Event> result = new ArrayList<>();
+                for (int i = 0; i < jsonArray.length(); i++) {
+                    Log.i("for",jsonArray.getJSONObject(i).getString("name"));
+
+                    result.add(new Event(jsonArray.getJSONObject(i).getString("name"),
+                            new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ").parse(jsonArray.getJSONObject(i).getString("date")),
+                            jsonArray.getJSONObject(i).getString("location"),
+                            jsonArray.getJSONObject(i).getString("description"),
+                            new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ").parse(jsonArray.getJSONObject(i).getString("departureTime"))
+                            ));
+                }
                 return result;
             } catch (Exception e){
-                return Long.valueOf(1);
+                return null;
             }
 
         } catch (Exception ex) {
-            Log.e("App", "DurationFetcher", ex);
+            Log.e("App", "GetEvents", ex);
             return null;
         } finally {
             if (bufferedReader != null) {
